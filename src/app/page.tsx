@@ -1,65 +1,91 @@
-import Image from "next/image";
+'use client'
 
-export default function Home() {
+import { useForm } from 'react-hook-form'
+import { useRouter } from 'next/navigation'
+import { useMutation } from '@tanstack/react-query'
+
+type LoginFormData = {
+  username: string
+  password: string
+}
+
+const inputClass = "w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-transparent transition placeholder:text-xs"
+
+async function loginRequest(data: LoginFormData) {
+  const res = await fetch('/api/auth/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  })
+  const result = await res.json()
+  if (!res.ok) throw new Error(result.error || 'Bir hata oluştu')
+  return result
+}
+
+export default function LoginPage() {
+  const router = useRouter()
+
+  const { register, handleSubmit, formState: { errors } } = useForm<LoginFormData>()
+
+  const { mutate, isPending, error } = useMutation({
+    mutationFn: loginRequest,
+    onSuccess: () => router.push('/dashboard'),
+  })
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 sm:p-8 w-full max-w-md">
+        <div className="mb-8 text-center">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Hoş Geldiniz</h1>
+          <p className="text-xs sm:text-sm text-gray-400 mt-2">Devam etmek için giriş yapın</p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+
+        <form onSubmit={handleSubmit((data) => mutate(data))} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Kullanıcı Adı
+            </label>
+            <input
+              type="text"
+              placeholder="Lütfen kullanıcı adınızı girin"
+              {...register('username', { required: 'Kullanıcı adı gerekli' })}
+              className={inputClass}
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+            {errors.username && (
+              <p className="text-red-500 text-xs mt-1">{errors.username.message}</p>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Şifre
+            </label>
+            <input
+              type="password"
+              placeholder="Lütfen şifrenizi girin"
+              {...register('password', { required: 'Şifre gerekli' })}
+              className={inputClass}
+            />
+            {errors.password && (
+              <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>
+            )}
+          </div>
+
+          {error && (
+            <div className="bg-red-50 text-red-600 text-xs px-4 py-3 rounded-lg">
+              {error.message}
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={isPending}
+            className="w-full bg-orange-400 hover:bg-orange-500 disabled:bg-orange-300 text-white text-sm font-semibold py-3 rounded-lg transition mt-2"
           >
-            Documentation
-          </a>
-        </div>
-      </main>
+            {isPending ? 'Giriş yapılıyor...' : 'Giriş Yap'}
+          </button>
+        </form>
+      </div>
     </div>
-  );
+  )
 }
